@@ -222,7 +222,7 @@ pool = parpool(c);
 % List the hosts the workers are running on. For a small pool,
 % all the workers will likely be on the same machine. For a large
 % pool, the workers will be spread over multiple nodes.
-future = parfevalOnAll(p, @getenv, 1, 'HOST')
+future = parfevalOnAll(pool, @getenv, 1, 'HOST')
 wait(future);
 fetchOutputs(future)
 
