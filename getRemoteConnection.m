@@ -15,6 +15,18 @@ if isempty(clusterHost)
         'Required field %s is missing from AdditionalProperties.', 'ClusterHost');
 end
 
+if ~cluster.HasSharedFilesystem
+    remoteJobStorageLocation = validatedPropValue(cluster.AdditionalProperties, ...
+        'RemoteJobStorageLocation', 'char');
+    if isempty(remoteJobStorageLocation)
+        error('parallelexamples:GenericSLURM:MissingAdditionalProperties', ...
+            'Required field %s is missing from AdditionalProperties.', 'RemoteJobStorageLocation');
+    end
+    
+    useUniqueSubfolders = validatedPropValue(cluster.AdditionalProperties, ...
+        'UseUniqueSubfolders', 'logical', false);
+end
+
 needToCreateNewConnection = false;
 if isempty(cluster.UserData)
     needToCreateNewConnection = true;
@@ -42,14 +54,37 @@ else
                     clusterAccessClassname, class(remoteConnection));
             end
             
+            if ~cluster.HasSharedFilesystem
+                if useUniqueSubfolders
+                    username = remoteConnection.Username;
+                    expectedRemoteJobStorageLocation = iBuildUniqueSubfolder(remoteJobStorageLocation, ...
+                        username, iGetFileSeparator(cluster));
+                else
+                    expectedRemoteJobStorageLocation = remoteJobStorageLocation;
+                end
+            end
+            
             if ~remoteConnection.IsConnected
                 needToCreateNewConnection = true;
-            elseif ~strcmpi(remoteConnection.Hostname, clusterHost)
+            elseif cluster.HasSharedFilesystem && ...
+                    ~strcmpi(remoteConnection.Hostname, clusterHost)
                 % The connection stored in the user data does not match the cluster host requested
                 warning('parallelexamples:GenericSLURM:DifferentRemoteParameters', ...
                     ['The current cluster is already using cluster host.\n', ...
                     'The existing connection to %s will be replaced.'], ...
                     remoteConnection.Hostname, remoteConnection.Hostname);
+                cluster.UserData.RemoteConnection = [];
+                needToCreateNewConnection = true;
+            elseif ~cluster.HasSharedFilesystem && ...
+                    (~strcmpi(remoteConnection.Hostname, clusterHost) || ...
+                    ~remoteConnection.IsFileMirrorSupported || ...
+                    ~strcmpi(remoteConnection.JobStorageLocation, expectedRemoteJobStorageLocation))
+                % The connection stored in the user data does not match the cluster host
+                % and remote location requested
+                warning('parallelexamples:GenericSLURM:DifferentRemoteParameters', ...
+                    ['The current cluster is already using cluster host %s and remote job storage location %s.\n', ...
+                    'The existing connection to %s will be replaced.'], ...
+                    remoteConnection.Hostname, remoteConnection.JobStorageLocation, remoteConnection.Hostname);
                 cluster.UserData.RemoteConnection = [];
                 needToCreateNewConnection = true;
             end
@@ -135,7 +170,15 @@ end
 % Now connect and store the connection
 dctSchedulerMessage(1, '%s: Connecting to remote host %s', ...
     currFilename, clusterHost);
-remoteConnection = parallel.cluster.RemoteClusterAccess.getConnectedAccess(clusterHost, userArgs{:});
+if cluster.HasSharedFilesystem
+    remoteConnection = parallel.cluster.RemoteClusterAccess.getConnectedAccess(clusterHost, userArgs{:});
+else
+    if useUniqueSubfolders
+        remoteJobStorageLocation = iBuildUniqueSubfolder(remoteJobStorageLocation, ...
+            username, iGetFileSeparator(cluster));
+    end
+    remoteConnection = parallel.cluster.RemoteClusterAccess.getConnectedAccessWithMirror(clusterHost, remoteJobStorageLocation, userArgs{:});
+end
 dctSchedulerMessage(5, '%s: Storing remote connection in cluster''s user data.', currFilename);
 cluster.UserData.RemoteConnection = remoteConnection;
 
@@ -258,5 +301,22 @@ returnValue = '';
 
 while isempty(returnValue) || ~any(strcmpi(returnValue, validValues))
     returnValue = input(message, 's');
+end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function subfolder = iBuildUniqueSubfolder(remoteJobStorageLocation, username, fileSeparator)
+% Function to build unique location using username and MATLAB release version
+release = ['R' version('-release')];
+subfolder = [remoteJobStorageLocation fileSeparator username fileSeparator release];
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function fileSeparator = iGetFileSeparator(cluster)
+% Function to return file separator for cluster operating system
+if strcmpi(cluster.OperatingSystem, 'unix')
+    fileSeparator = '/';
+else
+    fileSeparator = '\';
 end
 end
