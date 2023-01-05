@@ -1,4 +1,4 @@
-function createSubmitScript(outputFilename, jobName, quotedLogFile, quotedScriptName, ...
+function createSubmitScript(outputFilename, jobName, quotedLogFile, quotedWrapperPath, ...
     environmentVariables, additionalSubmitArgs, jobArrayString)
 % Create a script that sets the correct environment variables and then
 % executes the Slurm sbatch command.
@@ -31,7 +31,7 @@ end
 % We will forward all environment variables with this job in the call
 % to sbatch
 variablesToForward = environmentVariables(:,1);
-commandToRun = getSubmitString(jobName, quotedLogFile, quotedScriptName, ...
+commandToRun = getSubmitString(jobName, quotedLogFile, quotedWrapperPath, ...
     variablesToForward, additionalSubmitArgs, jobArrayString);
 fprintf(fid, '%s\n', commandToRun);
 
