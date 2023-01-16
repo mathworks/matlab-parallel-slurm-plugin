@@ -13,10 +13,7 @@ if ~isa(cluster, 'parallel.Cluster')
     error('parallelexamples:GenericSLURM:SubmitFcnError', ...
         'The function %s is for use with clusters created using the parcluster command.', currFilename)
 end
-if cluster.HasSharedFilesystem
-    error('parallelexamples:GenericSLURM:NotNonSharedFileSystem', ...
-        'The function %s is for use with nonshared filesystems.', currFilename)
-end
+
 % Get the information about the actual cluster used
 data = cluster.getJobClusterData(task.Parent);
 if isempty(data)
@@ -33,7 +30,6 @@ if ~strcmpi(task.Parent.Type, 'independent')
         'Unable to cancel a single task of a communicating job. If you want to cancel the entire job, use the cancel function on the job object instead.');
     return
 end
-remoteConnection = getRemoteConnection(cluster);
 
 % Get the cluster to delete the task
 if verLessThan('matlab', '9.7') % schedulerID stored in job data
@@ -46,8 +42,7 @@ erroredTaskAndCauseString = '';
 commandToRun = sprintf('scancel ''%s''', schedulerID);
 dctSchedulerMessage(4, '%s: Canceling task on cluster using command:\n\t%s.', currFilename, commandToRun);
 try
-    % Execute the command on the remote host.
-    [cmdFailed, cmdOut] = remoteConnection.runCommand(commandToRun);
+    [cmdFailed, cmdOut] = runSchedulerCommand(cluster, commandToRun);
 catch err
     cmdFailed = true;
     cmdOut = err.message;

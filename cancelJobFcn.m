@@ -13,10 +13,7 @@ if ~isa(cluster, 'parallel.Cluster')
     error('parallelexamples:GenericSLURM:SubmitFcnError', ...
         'The function %s is for use with clusters created using the parcluster command.', currFilename)
 end
-if ~cluster.HasSharedFilesystem
-    error('parallelexamples:GenericSLURM:NotSharedFileSystem', ...
-        'The function %s is for use with shared filesystems.', currFilename)
-end
+
 % Get the information about the actual cluster used
 data = cluster.getJobClusterData(job);
 if isempty(data)
@@ -25,7 +22,6 @@ if isempty(data)
     OK = true;
     return
 end
-remoteConnection = getRemoteConnection(cluster);
 
 % Get a simplified list of schedulerIDs to reduce the number of calls to
 % the scheduler.
@@ -37,8 +33,7 @@ for ii = 1:length(schedulerIDs)
     commandToRun = sprintf('scancel ''%s''', schedulerID);
     dctSchedulerMessage(4, '%s: Canceling job on cluster using command:\n\t%s.', currFilename, commandToRun);
     try
-        % Execute the command on the remote host.
-        [cmdFailed, cmdOut] = remoteConnection.runCommand(commandToRun);
+        [cmdFailed, cmdOut] = runSchedulerCommand(cluster, commandToRun);
     catch err
         cmdFailed = true;
         cmdOut = err.message;
@@ -49,6 +44,21 @@ for ii = 1:length(schedulerIDs)
         % these later on.
         erroredJobAndCauseStrings{ii} = sprintf('Job ID: %s\tReason: %s', schedulerID, strtrim(cmdOut));
         dctSchedulerMessage(1, '%s: Failed to cancel job %s on cluster.  Reason:\n\t%s', currFilename, schedulerID, cmdOut);
+    end
+end
+
+if ~cluster.HasSharedFilesystem
+    % Only stop mirroring if we are actually mirroring
+    remoteConnection = getRemoteConnection(cluster);
+    if remoteConnection.isJobUsingConnection(job.ID)
+        dctSchedulerMessage(5, '%s: Stopping the mirror for job %d.', currFilename, job.ID);
+        try
+            remoteConnection.stopMirrorForJob(job);
+        catch err
+            warning('parallelexamples:GenericSLURM:FailedToStopMirrorForJob', ...
+                'Failed to stop the file mirroring for job %d.\nReason: %s', ...
+                job.ID, err.getReport);
+        end
     end
 end
 
