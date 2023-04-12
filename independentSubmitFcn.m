@@ -6,10 +6,9 @@ function independentSubmitFcn(cluster, job, environmentProperties)
 %
 % See also parallel.cluster.generic.independentDecodeFcn.
 
-% Copyright 2010-2022 The MathWorks, Inc.
+% Copyright 2010-2023 The MathWorks, Inc.
 
-% Store the current filename for the errors, warnings and
-% dctSchedulerMessages.
+% Store the current filename for the errors, warnings and dctSchedulerMessages.
 currFilename = mfilename;
 if ~isa(cluster, 'parallel.Cluster')
     error('parallelexamples:GenericSLURM:NotClusterObject', ...
@@ -18,9 +17,22 @@ end
 
 decodeFunction = 'parallel.cluster.generic.independentDecodeFcn';
 
-if ~strcmpi(cluster.OperatingSystem, 'unix')
+clusterOS = cluster.OperatingSystem;
+if ~strcmpi(clusterOS, 'unix')
     error('parallelexamples:GenericSLURM:UnsupportedOS', ...
-        'The function %s only supports clusters with unix OS.', currFilename)
+        'The function %s only supports clusters with the unix operating system.', currFilename)
+end
+
+% Get the correct quote and file separator for the Cluster OS.
+% This check is unnecessary in this file because we explicitly
+% checked that the ClusterOsType is unix. This code is an example
+% of how to deal with clusters that can be unix or pc.
+if strcmpi(clusterOS, 'unix')
+    quote = '''';
+    fileSeparator = '/';
+else
+    quote = '"';
+    fileSeparator = '\';
 end
 
 if isprop(cluster.AdditionalProperties, 'ClusterHost')
@@ -53,18 +65,6 @@ else
             break
         end
     end
-end
-
-% Get the correct quote and file separator for the Cluster OS.
-% This check is unnecessary in this file because we explicitly
-% checked that the ClusterOsType is unix.  This code is an example
-% of how to deal with clusters that can be unix or pc.
-if strcmpi(cluster.OperatingSystem, 'unix')
-    quote = '''';
-    fileSeparator = '/';
-else
-    quote = '"';
-    fileSeparator = '\';
 end
 
 % The job specific environment variables
@@ -110,13 +110,13 @@ else
     jobDirectoryOnCluster = remoteConnection.getRemoteJobLocation(job.ID, cluster.OperatingSystem);
 end
 
-% The job wrapper name is independentJobWrapper.sh
+% Name of the wrapper script to launch the MATLAB worker
 jobWrapperName = 'independentJobWrapper.sh';
 % The wrapper script is in the same directory as this file
 dirpart = fileparts(mfilename('fullpath'));
 localScript = fullfile(dirpart, jobWrapperName);
 % Copy the local wrapper script to the job directory
-copyfile(localScript, localJobDirectory);
+copyfile(localScript, localJobDirectory, 'f');
 
 % The script to execute on the cluster to run the job
 wrapperPath = sprintf('%s%s%s', jobDirectoryOnCluster, fileSeparator, jobWrapperName);
@@ -241,13 +241,13 @@ if ~cluster.HasSharedFilesystem
     remoteConnection.startMirrorForJob(job);
 end
 
-if isprop(cluster.AdditionalProperties, 'ClusterHost')
+if strcmpi(cluster.OperatingSystem, 'unix')
     % Add execute permissions to shell scripts
     runSchedulerCommand(cluster, sprintf( ...
         'chmod u+x %s%s*.sh', jobDirectoryOnCluster, fileSeparator));
     % Convert line endings to Unix
     runSchedulerCommand(cluster, sprintf( ...
-        'dos2unix %s%s*.sh', jobDirectoryOnCluster, fileSeparator));
+        'dos2unix --allow-chown %s%s*.sh', jobDirectoryOnCluster, fileSeparator));
 end
 
 for ii=1:numel(commandsToRun)
@@ -369,15 +369,25 @@ if nargin < 10
     jobArrayString = [];
 end
 
-% Create a script to submit a Slurm job - this will be created in the job directory
-localSubmitScriptPath = tempname(localJobDirectory);
-createSubmitScript(localSubmitScriptPath, jobName, quotedLogFile, quotedWrapperPath, ...
-    environmentVariables, additionalSubmitArgs, jobArrayString);
+% Extension to use for scripts
+scriptExt = '.sh';
 
-% Path to the submit script as seen by the cluster
-[~, submitScriptName] = fileparts(localSubmitScriptPath);
-submitScriptPathOnCluster = sprintf('%s%s%s', jobDirectoryOnCluster, fileSeparator, submitScriptName);
+% Path to the submit script, to submit the Slurm job using sbatch
+localSubmitScriptPath = [tempname(localJobDirectory) scriptExt];
+[~, submitScriptName, submitScriptExt] = fileparts(localSubmitScriptPath);
+submitScriptPathOnCluster = sprintf('%s%s%s%s', jobDirectoryOnCluster, fileSeparator, submitScriptName, submitScriptExt);
 quotedSubmitScriptPathOnCluster = sprintf('%s%s%s', quote, submitScriptPathOnCluster, quote);
+
+% Path to the environment wrapper, which will set the environment variables
+% for the job then execute the job wrapper
+localEnvScriptPath = [tempname(localJobDirectory) scriptExt];
+[~, envScriptName, envScriptExt] = fileparts(localEnvScriptPath);
+envScriptPathOnCluster = sprintf('%s%s%s%s', jobDirectoryOnCluster, fileSeparator, envScriptName, envScriptExt);
+quotedEnvScriptPathOnCluster = sprintf('%s%s%s', quote, envScriptPathOnCluster, quote);
+
+createEnvironmentWrapper(localEnvScriptPath, quotedWrapperPath, environmentVariables);
+createSubmitScript(localSubmitScriptPath, jobName, quotedLogFile, ...
+    quotedEnvScriptPathOnCluster, additionalSubmitArgs, jobArrayString);
 
 % Create the command to run on the cluster
 commandToRun = sprintf('sh %s', quotedSubmitScriptPathOnCluster);

@@ -2,7 +2,7 @@ function commonSubmitArgs = getCommonSubmitArgs(cluster)
 % Get any additional submit arguments for the Slurm sbatch command
 % that are common to both independent and communicating jobs.
 
-% Copyright 2016-2022 The MathWorks, Inc.
+% Copyright 2016-2023 The MathWorks, Inc.
 
 commonSubmitArgs = '';
 ap = cluster.AdditionalProperties;
@@ -54,9 +54,42 @@ commonSubmitArgs = strtrim(commonSubmitArgs);
 
 end
 
-function commonSubmitArgs = iAppendArgument(commonSubmitArgs, ap, propName, propType, submitPattern)
-arg = validatedPropValue(ap, propName, propType);
-if ~isempty(arg) && (~islogical(arg) || arg)
-    commonSubmitArgs = sprintf([commonSubmitArgs ' ' submitPattern], arg);
+function commonSubmitArgs = iAppendArgument(commonSubmitArgs, ap, propName, propType, submitPattern, defaultValue)
+% Helper fcn to append a scheduler option to the submit string.
+% Inputs:
+%  commonSubmitArgs: submit string to append to
+%  ap: AdditionalProperties object
+%  propName: name of the property
+%  propType: type of the property, i.e. char, double or logical
+%  submitPattern: sprintf-style string specifying the format of the scheduler option
+%  defaultValue (optional): value to use if the property is not specified in ap
+
+if nargin < 6
+    defaultValue = [];
 end
+arg = validatedPropValue(ap, propName, propType, defaultValue);
+if ~isempty(arg) && (~islogical(arg) || arg)
+    commonSubmitArgs = [commonSubmitArgs, ' ', sprintf(submitPattern, arg)];
+end
+end
+
+function commonSubmitArgs = iAppendRequiredArgument(commonSubmitArgs, ap, propName, propType, submitPattern, errMsg) %#ok<DEFNU>
+% Helper fcn to append a required scheduler option to the submit string.
+% An error is thrown if the property is not specified in AdditionalProperties.
+% Inputs:
+%  commonSubmitArgs: submit string to append to
+%  ap: AdditionalProperties object
+%  propName: name of the property
+%  propType: type of the property, i.e. char, double or logical
+%  submitPattern: sprintf-style string specifying the format of the scheduler option
+%  errMsg (optional): text to append to the error message if the property is not specified in ap
+
+if ~isprop(ap, propName)
+    errorText = sprintf('Required field %s is missing from AdditionalProperties.', propName);
+    if nargin > 5
+        errorText = [errorText newline errMsg];
+    end
+    error('parallelexamples:GenericSLURM:MissingAdditionalProperties', errorText);
+end
+commonSubmitArgs = iAppendArgument(commonSubmitArgs, ap, propName, propType, submitPattern);
 end

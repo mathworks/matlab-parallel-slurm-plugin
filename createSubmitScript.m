@@ -1,11 +1,10 @@
-function createSubmitScript(outputFilename, jobName, quotedLogFile, quotedWrapperPath, ...
-    environmentVariables, additionalSubmitArgs, jobArrayString)
-% Create a script that sets the correct environment variables and then
-% executes the Slurm sbatch command.
+function createSubmitScript(outputFilename, jobName, quotedLogFile, ...
+    quotedWrapperPath, additionalSubmitArgs, jobArrayString)
+% Create a script that runs the Slurm sbatch command.
 
-% Copyright 2010-2022 The MathWorks, Inc.
+% Copyright 2010-2023 The MathWorks, Inc.
 
-if nargin < 7
+if nargin < 6
     jobArrayString = [];
 end
 
@@ -19,20 +18,11 @@ if fid < 0
 end
 fileCloser = onCleanup(@() fclose(fid));
 
-% Specify Shell to use
+% Specify shell to use
 fprintf(fid, '#!/bin/sh\n');
 
-% Write the commands to set and export environment variables
-for ii = 1:size(environmentVariables, 1)
-    fprintf(fid, 'export %s=''%s''\n', environmentVariables{ii,1}, environmentVariables{ii,2});
-end
-
-% Generate the command to run and write it.
-% We will forward all environment variables with this job in the call
-% to sbatch
-variablesToForward = environmentVariables(:,1);
 commandToRun = getSubmitString(jobName, quotedLogFile, quotedWrapperPath, ...
-    variablesToForward, additionalSubmitArgs, jobArrayString);
+    additionalSubmitArgs, jobArrayString);
 fprintf(fid, '%s\n', commandToRun);
 
 end

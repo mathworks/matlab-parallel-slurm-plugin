@@ -4,7 +4,7 @@ function remoteConnection = getRemoteConnection(cluster)
 % getRemoteConnection will either retrieve a RemoteClusterAccess from the
 % cluster's UserData or it will create a new RemoteClusterAccess.
 
-% Copyright 2010-2022 The MathWorks, Inc.
+% Copyright 2010-2023 The MathWorks, Inc.
 
 % Store the current filename for the dctSchedulerMessages
 currFilename = mfilename;
@@ -148,7 +148,7 @@ end
 
 % Build the user arguments to pass to RemoteClusterAccess
 userArgs = {username};
-if verLessThan('matlab', '9.11')
+if verLessThan('matlab', '9.11') %#ok<*VERLESSMATLAB> We support back to 17a
     if ~ischar(authMode) || ~ismember(authMode, {'IdentityFile', 'Password'})
         % Prior to R2021b, only IdentityFile and Password are supported
         error('parallelexamples:GenericSLURM:IncorrectArguments', ...
@@ -165,6 +165,14 @@ if any(strcmp(authMode, 'IdentityFile'))
     identityFileHasPassphrase = iGetIdentityFileHasPassphrase(cluster, useUI);
     userArgs = [userArgs, 'IdentityFilename', {identityFile}, ...
         'IdentityFileHasPassphrase', identityFileHasPassphrase];
+end
+
+% Changing SSH port supported for R2021b onwards
+if ~verLessThan('matlab', '9.11')
+    sshPort = validatedPropValue(cluster.AdditionalProperties, 'SSHPort', 'double');
+    if ~isempty(sshPort)
+        userArgs = [userArgs, 'Port', sshPort];
+    end
 end
 
 % Now connect and store the connection
