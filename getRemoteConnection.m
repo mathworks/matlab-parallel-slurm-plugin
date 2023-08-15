@@ -43,7 +43,7 @@ else
         remoteConnection = cluster.UserData.RemoteConnection;
         
         % And check it is of the type that we expect
-        if isempty(remoteConnection)
+        if isempty(remoteConnection) || (isa(remoteConnection, "handle") && ~isvalid(remoteConnection))
             needToCreateNewConnection = true;
         else
             clusterAccessClassname = 'parallel.cluster.RemoteClusterAccess';

@@ -39,7 +39,7 @@ else % schedulerID on task since 19b
     schedulerID = task.SchedulerID;
 end
 erroredTaskAndCauseString = '';
-commandToRun = sprintf('scancel ''%s''', schedulerID);
+commandToRun = sprintf('scancel -v ''%s''', schedulerID);
 dctSchedulerMessage(4, '%s: Canceling task on cluster using command:\n\t%s.', currFilename, commandToRun);
 try
     [cmdFailed, cmdOut] = runSchedulerCommand(cluster, commandToRun);
@@ -47,7 +47,11 @@ catch err
     cmdFailed = true;
     cmdOut = err.message;
 end
-if cmdFailed
+% scancel can return 0 even if there is an error, so also check the
+% cmdOut does not contain error text. We do not consider attempting
+% to cancel a finished job as a failure, so exclude that.
+if (cmdFailed || contains(cmdOut, 'error:')) && ...
+        ~contains(cmdOut, {'already completing', 'Invalid job id specified'})
     % Record if the task errored when being cancelled, either through a bad
     % exit code or if an error was thrown. We'll report this as a warning.
     erroredTaskAndCauseString = sprintf('Job ID: %s\tReason: %s', schedulerID, strtrim(cmdOut));

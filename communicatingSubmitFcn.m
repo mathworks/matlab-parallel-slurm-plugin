@@ -103,7 +103,7 @@ localJobDirectory = cluster.getJobFolder(job);
 if cluster.HasSharedFilesystem
     jobDirectoryOnCluster = cluster.getJobFolderOnCluster(job);
 else
-    jobDirectoryOnCluster = remoteConnection.getRemoteJobLocation(job.ID, cluster.OperatingSystem);
+    jobDirectoryOnCluster = remoteConnection.getRemoteJobLocation(job.ID, clusterOS);
 end
 
 % Specify the job wrapper script to use.
@@ -169,13 +169,13 @@ if ~cluster.HasSharedFilesystem
     remoteConnection.startMirrorForJob(job);
 end
 
-if strcmpi(cluster.OperatingSystem, 'unix')
+if strcmpi(clusterOS, 'unix')
     % Add execute permissions to shell scripts
     runSchedulerCommand(cluster, sprintf( ...
-        'chmod u+x %s%s*.sh', jobDirectoryOnCluster, fileSeparator));
+        'chmod u+x "%s%s"*.sh', jobDirectoryOnCluster, fileSeparator));
     % Convert line endings to Unix
     runSchedulerCommand(cluster, sprintf( ...
-        'dos2unix --allow-chown %s%s*.sh', jobDirectoryOnCluster, fileSeparator));
+        'dos2unix --allow-chown "%s%s"*.sh', jobDirectoryOnCluster, fileSeparator));
 end
 
 % Now ask the cluster to run the submission command
