@@ -123,10 +123,10 @@ end
 function state = iExtractJobState(sacctOut, numJobs)
 % Function to extract the job state from the output of sacct
 
-numPending  = numel(regexp(sacctOut, 'PENDING'));
-numRunning  = numel(regexp(sacctOut, 'RUNNING|SUSPENDED|COMPLETING|CONFIGURING'));
+numPending  = numel(regexp(sacctOut, 'PENDING|SPECIAL_EXIT'));
+numRunning  = numel(regexp(sacctOut, 'RUNNING|SUSPENDED|COMPLETING|CONFIGURING|STOPPED|RESIZING'));
 numFinished = numel(regexp(sacctOut, 'COMPLETED'));
-numFailed   = numel(regexp(sacctOut, 'CANCELLED|FAIL|TIMEOUT|PREEMPTED|OUT_OF'));
+numFailed   = numel(regexp(sacctOut, 'CANCELLED|FAIL|TIMEOUT|PREEMPTED|OUT_OF|REVOKED|DEADLINE'));
 
 % If all of the jobs that we asked about have finished, then we know the
 % job has finished.

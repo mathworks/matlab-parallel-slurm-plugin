@@ -1,6 +1,6 @@
 # Parallel Computing Toolbox plugin for MATLAB Parallel Server with Slurm
 
-[![View Parallel Computing Toolbox Plugin for Slurm on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://mathworks.com/matlabcentral/fileexchange/127364-parallel-computing-toolbox-plugin-for-slurm)
+[![View Parallel Computing Toolbox Plugin for Slurm on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://www.mathworks.com/matlabcentral/fileexchange/127364-parallel-computing-toolbox-plugin-for-slurm)
 
 Parallel Computing Toolbox&trade; provides the `Generic` cluster type for submitting MATLAB&reg; jobs to a cluster running a third-party scheduler.
 The `Generic` cluster type uses a set of plugin scripts to define how your machine communicates with your scheduler.
@@ -10,10 +10,10 @@ This repository contains MATLAB code files and shell scripts that you can use to
 
 ## Products Required
 
-- [MATLAB](https://mathworks.com/products/matlab.html) and [Parallel Computing Toolbox](https://mathworks.com/products/parallel-computing.html), R2017a or newer, installed on your computer.
-Refer to the documentation for [how to install MATLAB and toolboxes](https://mathworks.com/help/install/index.html) on your computer.
-- [MATLAB Parallel Server&trade;](https://mathworks.com/products/matlab-parallel-server.html) installed on the cluster.
-Refer to the documentation for [how to install MATLAB Parallel Server](https://mathworks.com/help/matlab-parallel-server/integrate-matlab-with-third-party-schedulers.html) on your cluster.
+- [MATLAB](https://www.mathworks.com/products/matlab.html) and [Parallel Computing Toolbox](https://www.mathworks.com/products/parallel-computing.html), R2017a or newer, installed on your computer.
+Refer to the documentation for [how to install MATLAB and toolboxes](https://www.mathworks.com/help/install/index.html) on your computer.
+- [MATLAB Parallel Server&trade;](https://www.mathworks.com/products/matlab-parallel-server.html) installed on the cluster.
+Refer to the documentation for [how to install MATLAB Parallel Server](https://www.mathworks.com/help/matlab-parallel-server/integrate-matlab-with-third-party-schedulers.html) on your cluster.
 The cluster administrator normally does this step.
 - [Slurm](https://slurm.schedmd.com/) running on the cluster.
 
@@ -42,7 +42,7 @@ The cluster configuration file is a plain text file with the extension `.conf` c
 The MATLAB client will use the cluster configuration file to create a cluster profile for the user who discovers the cluster.
 Therefore, users will not need to follow the instructions in the sections below.
 You can find an example of a cluster configuration file in [discover/example.conf](discover/example.conf).
-For full details on how to make a cluster running a third-party scheduler discoverable, see the documentation for [Configure for Third-Party Scheduler Cluster Discovery](https://mathworks.com/help/matlab-parallel-server/configure-for-cluster-discovery.html).
+For full details on how to make a cluster running a third-party scheduler discoverable, see the documentation for [Configure for Third-Party Scheduler Cluster Discovery](https://www.mathworks.com/help/matlab-parallel-server/configure-for-cluster-discovery.html).
 
 ### Create a Cluster Profile in MATLAB
 
@@ -59,7 +59,7 @@ c = parallel.cluster.Generic;
 ### Configure Cluster Properties
 
 This table lists the properties that you must specify to configure the `Generic` cluster profile.
-For a full list of cluster properties, see the documentation for [`parallel.Cluster`](https://mathworks.com/help/parallel-computing/parallel.cluster.html).
+For a full list of cluster properties, see the documentation for [`parallel.Cluster`](https://www.mathworks.com/help/parallel-computing/parallel.cluster.html).
 
 **Property**            | **Description**
 ------------------------|----------------
@@ -99,7 +99,7 @@ struct('windows', 'M:\jobstorage', 'unix', '/organization/matlabjobs/jobstorage'
 ```
 
 You can use `AdditionalProperties` to modify the behaviour of the `Generic` cluster without editing the plugin scripts.
-For a full list of the `AdditionalProperties` supported by the plugin scripts in this repository, see [Customize Behavior of Sample Plugin Scripts](https://mathworks.com/help/matlab-parallel-server/customize-behavior-of-sample-plugin-scripts.html).
+For a full list of the `AdditionalProperties` supported by the plugin scripts in this repository, see [Customize Behavior of Sample Plugin Scripts](https://www.mathworks.com/help/matlab-parallel-server/customize-behavior-of-sample-plugin-scripts.html).
 By modifying the plugins, you can add support for your own custom `AdditionalProperties`.
 
 #### Connect to a Remote Cluster
@@ -164,7 +164,7 @@ c = parcluster("mySLURMCluster")
 ### Submit Work for Batch Processing
 
 The `batch` command runs a MATLAB script or function on a worker on the cluster.
-For more information about batch processing, see the documentation for [`batch`](https://mathworks.com/help/parallel-computing/batch.html).
+For more information about batch processing, see the documentation for [`batch`](https://www.mathworks.com/help/parallel-computing/batch.html).
 
 ```matlab
 % Create a job and submit it to the cluster.
@@ -196,7 +196,7 @@ A parallel pool (parpool) is a group of MATLAB workers on which you can interact
 When you run the `parpool` command, MATLAB submits a special job to the cluster to start the workers.
 Once the workers start, your MATLAB session connects to them.
 Depending on the network configuration at your organization, including whether it is permissible to connect to a program running on a compute node, parpools may not be functional.
-For more information about parpools, see the documentation for [`parpool`](https://mathworks.com/help/parallel-computing/parpool.html).
+For more information about parpools, see the documentation for [`parpool`](https://www.mathworks.com/help/parallel-computing/parpool.html).
 
 ```matlab
 % Open a parallel pool on the cluster. This command returns a

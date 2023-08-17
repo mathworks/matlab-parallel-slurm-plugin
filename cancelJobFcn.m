@@ -30,7 +30,7 @@ erroredJobAndCauseStrings = cell(size(schedulerIDs));
 % Get the cluster to delete the job
 for ii = 1:length(schedulerIDs)
     schedulerID = schedulerIDs{ii};
-    commandToRun = sprintf('scancel ''%s''', schedulerID);
+    commandToRun = sprintf('scancel -v ''%s''', schedulerID);
     dctSchedulerMessage(4, '%s: Canceling job on cluster using command:\n\t%s.', currFilename, commandToRun);
     try
         [cmdFailed, cmdOut] = runSchedulerCommand(cluster, commandToRun);
@@ -38,7 +38,11 @@ for ii = 1:length(schedulerIDs)
         cmdFailed = true;
         cmdOut = err.message;
     end
-    if cmdFailed
+    % scancel can return 0 even if there is an error, so also check the
+    % cmdOut does not contain error text. We do not consider attempting
+    % to cancel a finished job as a failure, so exclude that.
+    if (cmdFailed || contains(cmdOut, 'error:')) && ...
+            ~contains(cmdOut, {'already completing', 'Invalid job id specified'})
         % Keep track of all jobs that errored when being cancelled, either
         % through a bad exit code or if an error was thrown. We'll report
         % these later on.
