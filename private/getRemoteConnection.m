@@ -278,26 +278,31 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function authMode = iPromptUserForAuthenticationMode(cluster, useUI)
 
+promptMessage = sprintf('Select an authentication method to log in to %s', cluster.AdditionalProperties.ClusterHost);
+options = {'Password', 'Identity File', 'Cancel'};
+
 if useUI
-    dlgMessage = sprintf('Use an identity file to login to %s?', cluster.AdditionalProperties.ClusterHost);
     dlgTitle = 'User Credentials';
-    identityFileResponse = questdlg(dlgMessage, dlgTitle);
-    if strcmp(identityFileResponse, 'Cancel')
-        % User hit cancel
+    defaultOption = 'Password';
+    authMode = questdlg(promptMessage, dlgTitle, options{:}, defaultOption);
+    authMode = strrep(authMode, ' ', '');
+    if strcmp(authMode, 'Cancel') || isempty(authMode)
+        % User hit cancel or closed the window
         error('parallelexamples:GenericSLURM:UserCancelledOperation', 'User cancelled operation.');
     end
-    useIdentityFile = strcmp(identityFileResponse, 'Yes');
 else
-    validYesNoResponse = {'y', 'n'};
-    identityFileMessage = sprintf('Use an identity file to login to %s? (y or n)\n', cluster.AdditionalProperties.ClusterHost);
-    identityFileResponse = iLoopUntilValidStringInput(identityFileMessage, validYesNoResponse);
-    useIdentityFile = strcmpi(identityFileResponse, 'y');
-end
-
-if useIdentityFile
-    authMode = 'IdentityFile';
-else
-    authMode = 'Password';
+    validResponses = {'1', '2', '3'};
+    displayItems = [validResponses; options];
+    identityFileMessage = [promptMessage, newline, sprintf('%s) %s\n', displayItems{:})];
+    response = iLoopUntilValidStringInput(identityFileMessage, validResponses);
+    switch response
+        case '1'
+            authMode = 'Password';
+        case '2'
+            authMode = 'IdentityFile';
+        otherwise
+            error('parallelexamples:GenericSLURM:UserCancelledOperation', 'User cancelled operation.');
+    end
 end
 
 end
