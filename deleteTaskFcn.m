@@ -1,11 +1,11 @@
 function deleteTaskFcn(cluster, task)
-%DELETEJOBFCN Deletes a job on cluster
+%DELETETASKFCN Deletes a job on Slurm
 %
 % Set your cluster's PluginScriptsLocation to the parent folder of this
 % function to run it when you delete a job.
 
-% Copyright 2020-2022 The MathWorks, Inc.
+% Copyright 2020-2023 The MathWorks, Inc.
 
-cancelTaskFcn(cluster, task);
+cancelTaskOnCluster(cluster, task);
 
 end
