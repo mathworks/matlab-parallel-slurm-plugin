@@ -6,7 +6,7 @@ function communicatingSubmitFcn(cluster, job, environmentProperties)
 %
 % See also parallel.cluster.generic.communicatingDecodeFcn.
 
-% Copyright 2010-2023 The MathWorks, Inc.
+% Copyright 2010-2024 The MathWorks, Inc.
 
 % Store the current filename for the errors, warnings and dctSchedulerMessages.
 currFilename = mfilename;
@@ -78,7 +78,8 @@ else
         storageLocation = [storageLocation, fileSeparator];
     end
 end
-variables = {'PARALLEL_SERVER_DECODE_FUNCTION', decodeFunction; ...
+variables = { ...
+    'PARALLEL_SERVER_DECODE_FUNCTION', decodeFunction; ...
     'PARALLEL_SERVER_STORAGE_CONSTRUCTOR', environmentProperties.StorageConstructor; ...
     'PARALLEL_SERVER_JOB_LOCATION', environmentProperties.JobLocation; ...
     'PARALLEL_SERVER_MATLAB_EXE', environmentProperties.MatlabExecutable; ...
@@ -99,6 +100,9 @@ end
 % Trim the environment variables of empty values.
 nonEmptyValues = cellfun(@(x) ~isempty(strtrim(x)), variables(:,2));
 variables = variables(nonEmptyValues, :);
+% List of all the variables to forward through mpiexec to the workers
+variables = [variables; ...
+    {'PARALLEL_SERVER_GENVLIST', strjoin(variables(:,1), ',')}];
 
 % The job directory as accessed by this machine
 localJobDirectory = cluster.getJobFolder(job);

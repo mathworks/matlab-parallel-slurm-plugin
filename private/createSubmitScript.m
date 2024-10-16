@@ -2,7 +2,7 @@ function createSubmitScript(outputFilename, jobName, quotedLogFile, ...
     quotedWrapperPath, additionalSubmitArgs, jobArrayString)
 % Create a script that runs the Slurm sbatch command.
 
-% Copyright 2010-2023 The MathWorks, Inc.
+% Copyright 2010-2024 The MathWorks, Inc.
 
 if nargin < 6
     jobArrayString = [];
@@ -20,6 +20,12 @@ fileCloser = onCleanup(@() fclose(fid));
 
 % Specify shell to use
 fprintf(fid, '#!/bin/sh\n');
+
+% Unset all SLURM_ and SBATCH_ variables to avoid conflicting options in nested jobs
+fprintf(fid, '%s\n', ...
+    'for VAR_NAME in $(env | cut -d= -f1 | grep -E ''^(SLURM_|SBATCH_)''); do', ...
+    '    unset "$VAR_NAME"', ...
+    'done');
 
 commandToRun = getSubmitString(jobName, quotedLogFile, quotedWrapperPath, ...
     additionalSubmitArgs, jobArrayString);

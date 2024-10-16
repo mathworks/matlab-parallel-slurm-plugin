@@ -5,7 +5,7 @@
 # PARALLEL_SERVER_MATLAB_EXE  - the MATLAB executable to use
 # PARALLEL_SERVER_MATLAB_ARGS - the MATLAB args to use
 
-# Copyright 2010-2022 The MathWorks, Inc.
+# Copyright 2010-2024 The MathWorks, Inc.
 
 # If PARALLEL_SERVER_ environment variables are not set, assign any
 # available values with form MDCE_ for backwards compatibility

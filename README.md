@@ -28,12 +28,6 @@ git clone https://github.com/mathworks/matlab-parallel-slurm-plugin
 ```
 You can execute a system command from the MATLAB command prompt by adding `!` before the command.
 
-### Scheduler Configuration
-
-These scripts use the `sacct` command to track the state of jobs on the cluster.
-For the `sacct` command to run, job accounting must be enabled on the Slurm cluster.
-To use `squeue` instead, uncomment the relevant lines in [`getJobStateFcn`](getJobStateFcn.m).
-
 ### Cluster Discovery
 
 Since version R2023a, MATLAB can discover clusters running third-party schedulers such as Slurm.
@@ -105,9 +99,9 @@ By modifying the plugins, you can add support for your own custom `AdditionalPro
 #### Connect to a Remote Cluster
 
 To manage work on the cluster, MATLAB calls the Slurm command line utilities.
-For example, the `sbatch` command to submit work and `sacct` to query the state of submitted jobs.
+For example, the `sbatch` command to submit work and `squeue` to query the state of submitted jobs.
 If your MATLAB session is running on a machine with the scheduler utilities available, the plugin scripts can call the utilities on the command line.
-Scheduler utilties are typically available if your MATLAB session is running on the Slurm cluster to which you want to submit.
+Scheduler utilities are typically available if your MATLAB session is running on the Slurm cluster to which you want to submit.
 
 If MATLAB cannot directly access the scheduler utilities on the command line, the plugin scripts create an SSH session to the cluster and run scheduler commands over that connection.
 To configure your cluster to submit scheduler commands via SSH, set the `ClusterHost` field of `AdditionalProperties` to the name of the cluster node to which MATLAB connects via SSH.
