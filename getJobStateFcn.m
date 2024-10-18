@@ -4,7 +4,7 @@ function state = getJobStateFcn(cluster, job, state)
 % Set your cluster's PluginScriptsLocation to the parent folder of this
 % function to run it when you query the state of a job.
 
-% Copyright 2010-2022 The MathWorks, Inc.
+% Copyright 2010-2024 The MathWorks, Inc.
 
 % Store the current filename for the errors, warnings and
 % dctSchedulerMessages
@@ -44,22 +44,8 @@ end
 
 [schedulerIDs, numSubmittedTasks] = getSimplifiedSchedulerIDsForJob(job);
 
-% Get the top level job state from sacct. sacct is better than squeue
-% because information about completed or terminated jobs is available for
-% longer. We use the '--allocations' option to request cumulative
-% statistics for each job. (Normal output of sacct includes intermediate
-% Slurm job steps which we don't want.) If the Slurm JobID counter has been
-% reset, there is a short period of time after a job has been submitted
-% that sacct may return information on an old job with the same JobID.
-% The option '--user=$USER' makes this less likely, as it will only happen
-% if the old job was submitted by the same user.
-jobList = sprintf('-j ''%s'' ', schedulerIDs{:});
-commandToRun = sprintf('sacct --allocations --user=$USER %s', jobList);
-% If sacct is unavailable, e.g. because the MATLAB client is running on a
-% compute node or because job accounting has not been configured on the
-% cluster, uncomment the following two lines to use squeue instead.
-% jobList = strjoin(schedulerIDs, ',');
-% commandToRun = sprintf('squeue -j %s --states=all --Format=jobarrayid,state --noheader --array', jobList);
+jobList = strjoin(schedulerIDs, ',');
+commandToRun = sprintf('squeue -j %s --states=all --Format=jobarrayid,state --noheader --array', jobList);
 dctSchedulerMessage(4, '%s: Querying cluster for job state using command:\n\t%s', currFilename, commandToRun);
 
 try
@@ -76,18 +62,20 @@ end
 clusterState = iExtractJobState(cmdOut, numSubmittedTasks);
 dctSchedulerMessage(6, '%s: State %s was extracted from cluster output.', currFilename, clusterState);
 
-% If we could determine the cluster's state, we'll use that, otherwise
-% stick with MATLAB's job state.
+% If we could determine the cluster's state, we'll use that. Otherwise, we assume
+% the scheduler is no longer tracking the job because the job has terminated.
 if ~strcmp(clusterState, 'unknown')
     state = clusterState;
+else
+    state = 'finished';
 end
 
 if ~cluster.HasSharedFilesystem
-    % Decide what to do with mirroring based on the cluster's version of job state and whether or not
-    % the job is currently being mirrored:
+    % Decide what to do with mirroring based on the cluster's version of job
+    % state and whether or not the job is currently being mirrored:
     % If job is not being mirrored, and job is not finished, resume the mirror
     % If job is not being mirrored, and job is finished, do the last mirror
-    % If the job is being mirrored, and job is finished, do the last mirror.
+    % If the job is being mirrored, and job is finished, do the last mirror
     % Otherwise (if job is not finished, and we are mirroring), do nothing
     remoteConnection = getRemoteConnection(cluster);
     isBeingMirrored = remoteConnection.isJobUsingConnection(job.ID);
@@ -120,13 +108,13 @@ end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function state = iExtractJobState(sacctOut, numJobs)
-% Function to extract the job state from the output of sacct
+function state = iExtractJobState(squeueOut, numJobs)
+% Function to extract the job state from the output of squeue
 
-numPending  = numel(regexp(sacctOut, 'PENDING|SPECIAL_EXIT'));
-numRunning  = numel(regexp(sacctOut, 'RUNNING|SUSPENDED|COMPLETING|CONFIGURING|STOPPED|RESIZING'));
-numFinished = numel(regexp(sacctOut, 'COMPLETED'));
-numFailed   = numel(regexp(sacctOut, 'CANCELLED|FAIL|TIMEOUT|PREEMPTED|OUT_OF|REVOKED|DEADLINE'));
+numPending  = numel(regexp(squeueOut, 'PENDING|SPECIAL_EXIT'));
+numRunning  = numel(regexp(squeueOut, 'RUNNING|SUSPENDED|COMPLETING|CONFIGURING|STOPPED|RESIZING'));
+numFinished = numel(regexp(squeueOut, 'COMPLETED'));
+numFailed   = numel(regexp(squeueOut, 'CANCELLED|FAIL|TIMEOUT|PREEMPTED|OUT_OF|REVOKED|DEADLINE'));
 
 % If all of the jobs that we asked about have finished, then we know the
 % job has finished.

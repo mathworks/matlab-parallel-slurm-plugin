@@ -19,7 +19,7 @@
 # The following environment variables are set by Slurm:
 # SLURM_NODELIST - list of hostnames allocated to this Slurm job
 
-# Copyright 2015-2022 The MathWorks, Inc.
+# Copyright 2015-2024 The MathWorks, Inc.
 
 # If PARALLEL_SERVER_ environment variables are not set, assign any
 # available values with form MDCE_ for backwards compatibility
@@ -29,6 +29,9 @@ PARALLEL_SERVER_MATLAB_ARGS=${PARALLEL_SERVER_MATLAB_ARGS:="${MDCE_MATLAB_ARGS}"
 PARALLEL_SERVER_TOTAL_TASKS=${PARALLEL_SERVER_TOTAL_TASKS:="${MDCE_TOTAL_TASKS}"}
 PARALLEL_SERVER_NUM_THREADS=${PARALLEL_SERVER_NUM_THREADS:="${MDCE_NUM_THREADS}"}
 PARALLEL_SERVER_DEBUG=${PARALLEL_SERVER_DEBUG:="${MDCE_DEBUG}"}
+
+# Other environment variables to forward
+PARALLEL_SERVER_GENVLIST="${PARALLEL_SERVER_GENVLIST},HOME,USER"
 
 # Echo the nodes that the scheduler has allocated to this job:
 echo -e "The scheduler has allocated the following nodes to this job:\n${SLURM_NODELIST:?"Node list undefined"}"
@@ -44,12 +47,14 @@ if [ ! -z "${PARALLEL_SERVER_DEBUG}" ] && [ "${PARALLEL_SERVER_DEBUG}" != "false
     MPI_VERBOSE="${MPI_VERBOSE} -v -print-all-exitcodes"
 fi
 
-# Unset the hostname variables to ensure they don't get forwarded by mpiexec
-unset HOST HOSTNAME
-
 # Construct the command to run.
-CMD="\"${FULL_MPIEXEC}\" -bind-to core:${PARALLEL_SERVER_NUM_THREADS} ${MPI_VERBOSE} -n ${PARALLEL_SERVER_TOTAL_TASKS} \
-    \"${PARALLEL_SERVER_MATLAB_EXE}\" ${PARALLEL_SERVER_MATLAB_ARGS}"
+CMD="\"${FULL_MPIEXEC}\" \
+    -genvlist ${PARALLEL_SERVER_GENVLIST} \
+    -bind-to core:${PARALLEL_SERVER_NUM_THREADS} \
+    ${MPI_VERBOSE} \
+    -n ${PARALLEL_SERVER_TOTAL_TASKS} \
+    \"${PARALLEL_SERVER_MATLAB_EXE}\" \
+    ${PARALLEL_SERVER_MATLAB_ARGS}"
 
 # Echo the command so that it is shown in the output log.
 echo $CMD

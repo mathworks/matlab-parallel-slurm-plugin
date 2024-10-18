@@ -4,7 +4,7 @@ function remoteConnection = getRemoteConnection(cluster)
 % getRemoteConnection will either retrieve a RemoteClusterAccess from the
 % cluster's UserData or it will create a new RemoteClusterAccess.
 
-% Copyright 2010-2023 The MathWorks, Inc.
+% Copyright 2010-2024 The MathWorks, Inc.
 
 % Store the current filename for the dctSchedulerMessages
 currFilename = mfilename;
@@ -70,7 +70,7 @@ else
                     ~strcmpi(remoteConnection.Hostname, clusterHost)
                 % The connection stored in the user data does not match the cluster host requested
                 warning('parallelexamples:GenericSLURM:DifferentRemoteParameters', ...
-                    ['The current cluster is already using cluster host.\n', ...
+                    ['The current cluster is already using cluster host %s.\n', ...
                     'The existing connection to %s will be replaced.'], ...
                     remoteConnection.Hostname, remoteConnection.Hostname);
                 cluster.UserData.RemoteConnection = [];
@@ -123,7 +123,7 @@ end
 %                             (true/false).
 
 % Use the UI for prompts if MATLAB has been started with the desktop enabled
-useUI = desktop('-inuse');
+useUI = iShouldUseUI();
 username = iGetUsername(cluster, useUI);
 
 % Decide which authentication mode to use
@@ -193,6 +193,17 @@ cluster.UserData.RemoteConnection = remoteConnection;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function useUI = iShouldUseUI()
+if verLessThan('matlab', '9.11')
+    % Prior to R2021b, check for Java AWT components
+    useUI = isempty(javachk('awt'));
+else
+    % From R2021b onwards, can use the desktop function
+    useUI = desktop('-inuse');
+end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function username = iGetUsername(cluster, useUI)
 
 username = validatedPropValue(cluster.AdditionalProperties, 'Username', 'char');
@@ -217,7 +228,8 @@ if useUI
 end
 
 % useUI == false
-username = input(sprintf('Enter the username for %s:\n', cluster.AdditionalProperties.ClusterHost), 's');
+msg = sprintf('Enter the username for %s:\n ', cluster.AdditionalProperties.ClusterHost);
+username = input(msg, 's');
 
 end
 
@@ -244,7 +256,7 @@ end
 
 % useUI == false
 validYesNoResponse = {'y', 'n'};
-passphraseMessage = 'Does the identity file require a password? (y or n)\n';
+passphraseMessage = sprintf('Does the identity file require a password? (y or n)\n ');
 passphraseResponse = iLoopUntilValidStringInput(passphraseMessage, validYesNoResponse);
 identityFileHasPassphrase = strcmpi(passphraseResponse, 'y');
 
@@ -269,7 +281,8 @@ else
         end
         identityFile = fullfile(pathname, filename);
     else
-        identityFile = input(sprintf('Please enter the full path to the Identity File to use:\n'), 's');
+        msg = sprintf('Please enter the full path to the Identity File to use:\n ');
+        identityFile = input(msg, 's');
     end
 end
 
@@ -293,7 +306,7 @@ if useUI
 else
     validResponses = {'1', '2', '3'};
     displayItems = [validResponses; options];
-    identityFileMessage = [promptMessage, newline, sprintf('%s) %s\n', displayItems{:})];
+    identityFileMessage = [promptMessage, newline, sprintf('%s) %s\n', displayItems{:}), ' '];
     response = iLoopUntilValidStringInput(identityFileMessage, validResponses);
     switch response
         case '1'
