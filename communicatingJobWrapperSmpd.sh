@@ -19,7 +19,7 @@
 # SLURM_JOB_NODELIST   - list of hostnames allocated to Slurm job
 # SLURM_TASKS_PER_NODE - list containing number of tasks allocated per host to Slurm job
 
-# Copyright 2015-2022 The MathWorks, Inc.
+# Copyright 2015-2024 The MathWorks, Inc.
 
 # If PARALLEL_SERVER_ environment variables are not set, assign any
 # available values with form MDCE_ for backwards compatibility
@@ -162,7 +162,7 @@ cleanupAndExit() {
 
     echo "Stopping SMPD ..."
 
-    STOP_SMPD_CMD="srun --ntasks-per-node=1 --ntasks=${SLURM_JOB_NUM_NODES} ${FULL_SMPD} -shutdown -phrase MATLAB -port ${SMPD_PORT}"
+    STOP_SMPD_CMD="srun --ntasks-per-node=1 --ntasks=${SLURM_JOB_NUM_NODES} --cpu-bind=none ${FULL_SMPD} -shutdown -phrase MATLAB -port ${SMPD_PORT}"
     echo $STOP_SMPD_CMD
     eval $STOP_SMPD_CMD
 
@@ -177,7 +177,7 @@ launchSmpds() {
     # Launch the SMPD processes on all hosts using srun
     echo "Starting SMPD on ${SMPD_HOSTS} ..."
 
-    START_SMPD_CMD="srun --ntasks-per-node=1 --ntasks=${SLURM_JOB_NUM_NODES} ${FULL_SMPD} -phrase MATLAB -port ${SMPD_PORT} -debug 0 &"
+    START_SMPD_CMD="srun --ntasks-per-node=1 --ntasks=${SLURM_JOB_NUM_NODES} ${FULL_SMPD} --cpu-bind=none -phrase MATLAB -port ${SMPD_PORT} -debug 0 &"
     echo $START_SMPD_CMD
     eval $START_SMPD_CMD
 
