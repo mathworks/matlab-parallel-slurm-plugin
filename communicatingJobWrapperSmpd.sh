@@ -177,7 +177,7 @@ launchSmpds() {
     # Launch the SMPD processes on all hosts using srun
     echo "Starting SMPD on ${SMPD_HOSTS} ..."
 
-    START_SMPD_CMD="srun --ntasks-per-node=1 --ntasks=${SLURM_JOB_NUM_NODES} ${FULL_SMPD} --cpu-bind=none -phrase MATLAB -port ${SMPD_PORT} -debug 0 &"
+    START_SMPD_CMD="srun --ntasks-per-node=1 --ntasks=${SLURM_JOB_NUM_NODES} --cpu-bind=none ${FULL_SMPD} -phrase MATLAB -port ${SMPD_PORT} -debug 0 &"
     echo $START_SMPD_CMD
     eval $START_SMPD_CMD
 
