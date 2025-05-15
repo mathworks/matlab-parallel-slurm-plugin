@@ -93,6 +93,25 @@ variables = { ...
     'PARALLEL_SERVER_CMR', strip(cluster.ClusterMatlabRoot, 'right', '/'); ...
     'PARALLEL_SERVER_TOTAL_TASKS', num2str(environmentProperties.NumberOfTasks); ...
     'PARALLEL_SERVER_NUM_THREADS', num2str(cluster.NumThreads)};
+% Starting in R2025a, IntelMPI is supported via MPIImplementation="IntelMPI"
+if ~verLessThan('matlab', '25.1') && ...
+        isprop(cluster.AdditionalProperties, 'MPIImplementation') %#ok<VERLESSMATLAB>
+    mpiImplementation = cluster.AdditionalProperties.MPIImplementation;
+    mustBeMember(mpiImplementation, ["IntelMPI", "MPICH"]);
+    variables = [variables; {'PARALLEL_SERVER_MPIEXEC_ARG', ['-', char(mpiImplementation)]}];
+end
+
+% Avoid "-bind-to core:N" if AdditionalProperties.UseBindToCore is false (default: true).
+if validatedPropValue(cluster.AdditionalProperties, 'UseBindToCore', 'logical', true)
+    bindToCoreValue = 'true';
+else
+    bindToCoreValue = 'false';
+end
+variables = [variables; {'PARALLEL_SERVER_BIND_TO_CORE', bindToCoreValue}];
+
+if ~verLessThan('matlab', '25.1') %#ok<VERLESSMATLAB>
+    variables = [variables; environmentProperties.JobEnvironment];
+end
 % Environment variable names different prior to 19b
 if verLessThan('matlab', '9.7')
     variables(:,1) = replace(variables(:,1), 'PARALLEL_SERVER_', 'MDCE_');
@@ -118,6 +137,11 @@ end
 % Prior to R2019a, only the SMPD process manager is supported.
 if verLessThan('matlab', '9.6') || ...
         validatedPropValue(cluster.AdditionalProperties, 'UseSmpd', 'logical', false)
+    if ~verLessThan('matlab', '25.1') %#ok<VERLESSMATLAB>
+        % Starting in R2025a, smpd launcher is not supported.
+        error('parallelexamples:GenericSLURM:SmpdNoLongerSupported', ...
+            'The smpd process manager is no longer supported.');
+    end
     jobWrapperName = 'communicatingJobWrapperSmpd.sh';
 else
     jobWrapperName = 'communicatingJobWrapper.sh';
