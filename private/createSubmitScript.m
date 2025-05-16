@@ -21,9 +21,11 @@ fileCloser = onCleanup(@() fclose(fid));
 % Specify shell to use
 fprintf(fid, '#!/bin/sh\n');
 
-% Unset all SLURM_ and SBATCH_ variables to avoid conflicting options in nested jobs
+% Unset all SLURM_ and SBATCH_ variables to avoid conflicting options in
+% nested jobs, except for SLURM_CONF which is required for the Slurm
+% utilities to work
 fprintf(fid, '%s\n', ...
-    'for VAR_NAME in $(env | cut -d= -f1 | grep -E ''^(SLURM_|SBATCH_)''); do', ...
+    'for VAR_NAME in $(env | cut -d= -f1 | grep -E ''^(SLURM_|SBATCH_)'' | grep -v ''^SLURM_CONF$''); do', ...
     '    unset "$VAR_NAME"', ...
     'done');
 

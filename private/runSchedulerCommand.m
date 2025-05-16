@@ -1,7 +1,7 @@
 function [status, result] = runSchedulerCommand(cluster, cmd)
 %RUNSCHEDULERCOMMAND Run a command on the cluster.
 
-% Copyright 2019-2022 The MathWorks, Inc.
+% Copyright 2019-2024 The MathWorks, Inc.
 
 persistent wrapper
 
@@ -17,17 +17,22 @@ else
         % the system call to the scheduler on UNIX within a shell script to
         % sanitize any exit codes in this range.
         if isempty(wrapper)
-            if verLessThan('matlab', '9.7') % folder renamed in 19b
-                dirName = 'distcomp';
-            else
-                dirName = 'parallel';
-            end
-            wrapper = fullfile(toolboxdir(dirName), ...
-                'bin', 'util', 'shellWrapper.sh'); %#ok<*DCRENAME>
+            wrapper = iBuildWrapperPath();
         end
         cmd = sprintf('%s %s', wrapper, cmd);
     end
     [status, result] = system(cmd);
 end
 
+end
+
+function wrapper = iBuildWrapperPath()
+if verLessThan('matlab', '9.7')
+    pctDir = toolboxdir('distcomp'); %#ok<*DCRENAME>
+elseif verLessThan('matlab', '25.1') %#ok<*VERLESSMATLAB>
+    pctDir = toolboxdir('parallel');
+else
+    pctDir = fullfile(matlabroot, 'toolbox', 'parallel');
+end
+wrapper = fullfile(pctDir, 'bin', 'util', 'shellWrapper.sh');
 end

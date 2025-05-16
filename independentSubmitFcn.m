@@ -6,7 +6,7 @@ function independentSubmitFcn(cluster, job, environmentProperties)
 %
 % See also parallel.cluster.generic.independentDecodeFcn.
 
-% Copyright 2010-2023 The MathWorks, Inc.
+% Copyright 2010-2024 The MathWorks, Inc.
 
 % Store the current filename for the errors, warnings and dctSchedulerMessages.
 currFilename = mfilename;
@@ -97,6 +97,9 @@ variables = { ...
     'MLM_WEB_ID', environmentProperties.LicenseWebID; ...
     'PARALLEL_SERVER_LICENSE_NUMBER', environmentProperties.LicenseNumber; ...
     'PARALLEL_SERVER_STORAGE_LOCATION', storageLocation};
+if ~verLessThan('matlab', '25.1') %#ok<VERLESSMATLAB>
+    variables = [variables; environmentProperties.JobEnvironment];
+end
 % Environment variable names different prior to 19b
 if verLessThan('matlab', '9.7')
     variables(:,1) = replace(variables(:,1), 'PARALLEL_SERVER_', 'MDCE_');
